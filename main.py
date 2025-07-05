@@ -1,4 +1,5 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers.utils.quantization_config import BitsAndBytesConfig
 import torch
 
 quant_config = BitsAndBytesConfig(
