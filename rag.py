@@ -6,41 +6,52 @@ import pdfplumber
 
 # extract data
 
-rows = []
+all_rows = []
 
 with pdfplumber.open('./data/civil-1.pdf') as pdf:
     for page in pdf.pages:
         tables = page.extract_tables()
         for table in tables:
-            for row in table[1:]: # ignore header
-                if any(str(cell).strip() for cell in row):
-                    rows.append(row)
+            df = pd.DataFrame(table[1:], columns=table[0])
+            all_rows.append(df)
+
+df_full = pd.concat(all_rows, ignore_index=True)
+
+df_full = df_full.ffill()
 
 # generate document from data
 
 docs_text = []
+week_days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
-for row in rows:
-    ciclo, curso, seccion, evento, docente, aula, *dias = row
+for _, row in df_full.iterrows():
 
-    dias_texto = ''
-    dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
+    ciclo = row['Ciclo']
+    curso = row['Asignatura']
+    seccion = row['Sección']
+    evento = row['Evento']
+    docente = row['Docente'] or "Desconocido"
+    aula = row['Aula'] or "lugar no especificado"
 
-    for dia, hora in zip(dias_semana, dias):
-        if hora and hora.strip():
-            dias_texto += f"Se dicta los {dia.lower()} de {hora.strip()}"
+    days_text = ''
 
-    texto = (
-        f"En el {str(ciclo).strip()} se dicta el curso \"{str(curso).strip()}\", "
-        f"sección {str(seccion).strip()}, evento {str(evento).strip()}, "
-        f"dictado por el docente {str(docente).strip() or 'Desconocido'}, "
-        f"ubicado en {str(aula).strip() or 'lugar no especificado'}.{dias_texto}"
+    for day in week_days:
+        hora = row.get(day, '')
+        if pd.notna(hora) and hora.strip():
+            days_text += f' Se dicta los {day.lower()} de {hora.strip()}'
+
+    text = (
+        f'En el {ciclo.strip()} se dicta el curso \"{curso.strip()}\", '
+        f'sección {seccion.strip()}, evento {evento.strip()}, '
+        f'dictado por el docente {docente.strip()}, '
+        f'ubicado en {aula.strip()}.{days_text}'
     )
 
-    docs_text.append(texto)
-
+    docs_text.append(text)
 
 data = '\n'.join(docs_text)
+
+print(data)
 
 # Importando modelo para creacion de embeddings
 embedding = HuggingFaceEmbeddings(model_name='all-MiniLM-L6-v2') # For 

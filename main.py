@@ -10,7 +10,7 @@ from langchain_community.vectorstores import FAISS # la base de datos vectorial 
 # load embeddings
 embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vectorstore = FAISS.load_local("./data/data_horarios", embeddings = embedding, allow_dangerous_deserialization=True)
-retriever = vectorstore.as_retriever(sarch_kwargs={"k": 3})
+retriever = vectorstore.as_retriever(sarch_kwargs={"k": 1})
 
 # load model
 quant_config = BitsAndBytesConfig(
@@ -29,7 +29,7 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.float16
 )
 
-tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True, max_length=500)
+tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True, max_length=1000)
 
 pipe = pipeline('text-generation', model=model, tokenizer=tokenizer, return_full_text=False)
 
@@ -46,15 +46,15 @@ context = "\n".join([doc.page_content for doc in docs])
 
 prompt = f"""
 <|system|>
-Eres un asistente académico que responde preguntas sobre los horarios de clases de los alumnos.
-Se te haran preguntas acerca de horarios de clases, como los dias que estos se dictan, las horas a las que se dictan o la ubicacion de los mismos,
-Tus respuestas deben ser breves y en un tono amigable y natural
-Tu única fuente de información es el contexto proporcionado. No inventes respuestas. Si no sabes algo, responde educadamente que no puedes ayudar.
+Eres un asistente académico que responde preguntas sobre los horarios de clases de los alumnos, daras respuestas amables y en un formato facil de entender.
+Tu única fuente de información es el contexto proporcionado, este contexto te esta dando la informacion acerca de los cursos que se llevan del primer a decimo ciclo, asi como tambien de los cursos electivos. No inventes respuestas. Si no sabes algo, responde educadamente que no puedes ayudar.
 <|end|>
 <|user|>
 Contexto:
 
 {context}
+
+Analisa el contexto a detalle para dar una respuesta coherente a la pregunta del usuario,
 
 Pregunta del usuario: {input_user}
 <|end|>
@@ -66,8 +66,8 @@ Pregunta del usuario: {input_user}
 output = pipe(
     prompt,
     max_new_tokens=300,
-    temperature=0.1,
-    do_sample=False,
+    temperature=0.3,
+    do_sample=True,
     return_full_text=False
     )
 
