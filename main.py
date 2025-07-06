@@ -1,4 +1,5 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers.pipelines import pipeline
 from transformers.utils.quantization_config import BitsAndBytesConfig
 import torch
 
@@ -46,6 +47,8 @@ context = "\n".join([doc.page_content for doc in docs])
 prompt = f"""
 <|system|>
 Eres un asistente académico que responde preguntas sobre los horarios de clases de los alumnos.
+Se te haran preguntas acerca de horarios de clases, como los dias que estos se dictan, las horas a las que se dictan o la ubicacion de los mismos,
+Tus respuestas deben ser breves y en un tono amigable y natural
 Tu única fuente de información es el contexto proporcionado. No inventes respuestas. Si no sabes algo, responde educadamente que no puedes ayudar.
 <|end|>
 <|user|>
